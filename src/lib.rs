@@ -45,6 +45,7 @@
 //! `Warning`/`Warnings`/`Caution`, `Deprecated`.
 
 pub mod error;
+pub mod ffi;
 pub mod parser;
 pub mod section;
 

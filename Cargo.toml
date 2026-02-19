@@ -10,6 +10,9 @@ keywords = ["nix", "nixdoc", "documentation", "parser"]
 categories = ["parsing", "text-processing"]
 rust-version = "1.91.0"
 
+[lib]
+crate-type = ["cdylib", "staticlib"]
+
 [dependencies]
 thiserror = "2.0.18"
 
