@@ -1,5 +1,6 @@
 #![allow(unsafe_op_in_unsafe_fn)]
 
+use std::ffi::CString;
 use std::os::raw::{c_char, c_int};
 use std::panic::catch_unwind;
 use std::ptr;
@@ -38,13 +39,12 @@ pub unsafe extern "C" fn nixdoc_parse(input: *const c_char) -> c_int {
         let input_str = std::ffi::CStr::from_ptr(input)
             .to_string_lossy()
             .into_owned();
-        DocComment::parse(&input_str)
-            .map(|doc| Box::into_raw(Box::new(doc)) as *mut NixdocDocComment)
+        DocComment::parse(&input_str).is_ok()
     });
 
     match result {
-        Ok(Ok(_ptr)) => NIXDOC_SUCCESS,
-        Ok(Err(_)) => NIXDOC_ERROR_PARSE,
+        Ok(true) => NIXDOC_SUCCESS,
+        Ok(false) => NIXDOC_ERROR_PARSE,
         Err(_) => NIXDOC_ERROR_PANIC,
     }
 }
@@ -389,7 +389,7 @@ pub unsafe extern "C" fn nixdoc_warnings(doc: *const NixdocDocComment) -> *mut N
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn nixdoc_free_string(ptr: *mut c_char) {
     if !ptr.is_null() {
-        drop(Box::from_raw(ptr));
+        drop(CString::from_raw(ptr));
     }
 }
 
@@ -411,7 +411,7 @@ pub unsafe extern "C" fn nixdoc_free_string_array(arr: *mut NixdocStringArray) {
         let slice = slice::from_raw_parts_mut(arr.data, arr.len);
         for ptr in slice.iter() {
             if !ptr.is_null() {
-                drop(Box::from_raw(*ptr));
+                drop(CString::from_raw(*ptr));
             }
         }
         drop(Vec::from_raw_parts(slice.as_mut_ptr(), arr.len, arr.len));
