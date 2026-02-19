@@ -86,3 +86,12 @@ is provided [here](https://www.mozilla.org/en-US/MPL/2.0/).
   <a href="#doc-begin">Back to the Top</a>
   <br/>
 </div>
+
+### Attributions
+
+[noogle]: https://github.com/nix-community/noogle?
+
+This project is greatly inspired by [noogle]'s Pesto module. While pesto is a
+CLI and prefers to consume the `rnix` parser, `nixdoc` is completely standalone
+and is designed as a library with the integration and extraction left to the
+user.
