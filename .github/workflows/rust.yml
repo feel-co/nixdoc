@@ -1,0 +1,105 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: 0
+  CARGO_NET_RETRY: 10
+  RUSTUP_MAX_RETRIES: 10
+
+jobs:
+  changes:
+    name: Detect Changed Files
+    runs-on: ubuntu-latest
+    outputs:
+      files_changed: ${{ steps.changed-files.outputs.files }}
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+      - name: Get changed files
+        id: changed-files
+        uses: dorny/paths-filter@v3
+        with:
+          filters: |
+            files:
+              - '.github/workflows/rust.yml'
+              - 'Cargo.toml'
+              - 'Cargo.lock'
+              - 'src/**'
+
+  build:
+    name: Build
+    needs: changes
+    if: ${{ needs.changes.outputs.files_changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build
+        run: cargo build --release
+
+  docs:
+    name: Documentation
+    needs: changes
+    if: ${{ needs.changes.outputs.files_changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Build documentation
+        run: cargo doc --no-deps
+
+  test:
+    name: Test
+    needs: changes
+    if: ${{ needs.changes.outputs.files_changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run tests
+        run: cargo test
+
+  clippy:
+    name: Clippy
+    needs: changes
+    if: ${{ needs.changes.outputs.files_changed == 'true' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v6
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache dependencies
+        uses: Swatinem/rust-cache@v2
+
+      - name: Run Clippy
+        run: cargo clippy -- -D warnings
