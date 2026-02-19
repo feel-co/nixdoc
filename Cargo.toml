@@ -8,6 +8,7 @@ repository = "https://github.com/feel-co/nixdoc"
 homepage = "https://github.com/feel-co/nixdoc"
 keywords = ["nix", "nixdoc", "documentation", "parser"]
 categories = ["parsing", "text-processing"]
+rust-version = "1.91.0"
 
 [dependencies]
 thiserror = "2.0.18"
