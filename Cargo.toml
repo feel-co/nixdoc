@@ -3,6 +3,9 @@ name = "nixdoc"
 version = "0.1.0"
 edition = "2024"
 license = "MPL-2.0"
+description = "Parser for Nixdoc documentation comments"
+repository = "https://github.com/feel-co/nixdoc"
+homepage = "https://github.com/feel-co/nixdoc"
 keywords = ["nix", "nixdoc", "documentation", "parser"]
 categories = ["parsing", "text-processing"]
 
