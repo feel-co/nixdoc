@@ -3,7 +3,7 @@ use thiserror::Error;
 /// Errors that can occur while parsing a Nixdoc comment.
 #[derive(Debug, Error, PartialEq, Clone)]
 pub enum ParseError {
-    /// The input is not a doc comment , it does not start with `/**`.
+    /// The input is not a doc comment; it does not start with `/**`.
     #[error("not a doc comment: input must start with '/**'")]
     NotDocComment,
 

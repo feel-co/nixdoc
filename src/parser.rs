@@ -314,47 +314,10 @@ pub(crate) fn parse_arguments(content: &str) -> Vec<Argument> {
 /// examples may appear in a single section, separated by prose or other content.
 /// Fences of 4 or more backticks/tildes are handled correctly.
 pub(crate) fn parse_examples(content: &str) -> Vec<Example> {
-    let mut examples = Vec::new();
-    let mut in_block = false;
-    let mut current_language: Option<String> = None;
-    let mut current_code = String::new();
-    let mut block_fence_char: char = '`';
-    let mut block_fence_len: usize = 3;
-
-    for line in content.lines() {
-        let trimmed = line.trim_start();
-
-        if !in_block {
-            if let Some((fc, fl, lang)) = parse_fence_open(trimmed) {
-                in_block = true;
-                block_fence_char = fc;
-                block_fence_len = fl;
-                current_language = lang;
-                current_code.clear();
-            }
-        } else if is_closing_fence(trimmed, block_fence_char, block_fence_len) {
-            // Closing fence: save the accumulated example.
-            examples.push(Example {
-                language: current_language.take(),
-                code: current_code.clone(),
-            });
-            current_code.clear();
-            in_block = false;
-        } else {
-            current_code.push_str(line);
-            current_code.push('\n');
-        }
-    }
-
-    // Unclosed code block: return what we have rather than silently failing.
-    if in_block && !current_code.is_empty() {
-        examples.push(Example {
-            language: current_language.take(),
-            code: current_code,
-        });
-    }
-
-    examples
+    FenceParser::parse_blocks(content)
+        .into_iter()
+        .map(|(language, code)| Example { language, code })
+        .collect()
 }
 
 /// Extract the content of the first fenced code block in a string.
@@ -363,34 +326,7 @@ pub(crate) fn parse_examples(content: &str) -> Vec<Example> {
 /// `# Type` section. Returns `None` if no code block is found.
 /// Fences of 4 or more backticks/tildes are handled correctly.
 pub(crate) fn extract_first_code_block(content: &str) -> Option<String> {
-    let mut in_block = false;
-    let mut result = String::new();
-    let mut block_fence_char: char = '`';
-    let mut block_fence_len: usize = 3;
-
-    for line in content.lines() {
-        let trimmed = line.trim_start();
-
-        if !in_block {
-            if let Some((fc, fl, _)) = parse_fence_open(trimmed) {
-                in_block = true;
-                block_fence_char = fc;
-                block_fence_len = fl;
-            }
-        } else if is_closing_fence(trimmed, block_fence_char, block_fence_len) {
-            return Some(result);
-        } else {
-            result.push_str(line);
-            result.push('\n');
-        }
-    }
-
-    // Unclosed code block: return what we have rather than silently failing.
-    if in_block && !result.is_empty() {
-        Some(result)
-    } else {
-        None
-    }
+    FenceParser::first_block(content)
 }
 
 /// Extract a legacy inline type annotation from a description string.
@@ -425,25 +361,104 @@ pub(crate) fn extract_inline_type_sig(content: &str) -> Option<String> {
 /// underscores, hyphens, primes). An empty or multi-word prefix is rejected
 /// to avoid false positives in prose descriptions.
 fn parse_inline_type_line(line: &str) -> Option<&str> {
-    // Must contain `::`
     let sep = line.find("::")?;
     let before = line[..sep].trim();
     let after = line[sep + 2..].trim();
 
-    // Both sides must be non-empty.
     if before.is_empty() || after.is_empty() {
         return None;
     }
 
-    // The name must look like a Nix identifier: alphanumeric, '_', '-', '\''.
-    // Rejecting anything with spaces prevents matching prose like
-    // "a function takes foo :: bar arguments".
     let is_valid_ident = !before.is_empty()
         && before
             .chars()
             .all(|c| c.is_alphanumeric() || c == '_' || c == '-' || c == '\'');
 
     if is_valid_ident { Some(line) } else { None }
+}
+
+struct FenceParser {
+    in_block: bool,
+    fence_char: char,
+    fence_len: usize,
+    content: String,
+    language: Option<String>,
+}
+
+impl FenceParser {
+    fn new() -> Self {
+        Self {
+            in_block: false,
+            fence_char: '`',
+            fence_len: 3,
+            content: String::new(),
+            language: None,
+        }
+    }
+
+    fn parse_blocks(content: &str) -> Vec<(Option<String>, String)> {
+        let mut parser = Self::new();
+        let mut blocks = Vec::new();
+
+        for line in content.lines() {
+            let trimmed = line.trim_start();
+
+            if !parser.in_block {
+                if let Some((fc, fl, lang)) = parse_fence_open(trimmed) {
+                    parser.in_block = true;
+                    parser.fence_char = fc;
+                    parser.fence_len = fl;
+                    parser.language = lang;
+                    parser.content.clear();
+                }
+            } else if is_closing_fence(trimmed, parser.fence_char, parser.fence_len) {
+                blocks.push((parser.language.take(), std::mem::take(&mut parser.content)));
+                parser.in_block = false;
+            } else {
+                if !parser.content.is_empty() {
+                    parser.content.push('\n');
+                }
+                parser.content.push_str(line);
+                parser.content.push('\n');
+            }
+        }
+
+        if parser.in_block && !parser.content.is_empty() {
+            blocks.push((parser.language.take(), parser.content));
+        }
+
+        blocks
+    }
+
+    fn first_block(content: &str) -> Option<String> {
+        let mut parser = Self::new();
+
+        for line in content.lines() {
+            let trimmed = line.trim_start();
+
+            if !parser.in_block {
+                if let Some((fc, fl, _)) = parse_fence_open(trimmed) {
+                    parser.in_block = true;
+                    parser.fence_char = fc;
+                    parser.fence_len = fl;
+                }
+            } else if is_closing_fence(trimmed, parser.fence_char, parser.fence_len) {
+                return Some(parser.content);
+            } else {
+                if !parser.content.is_empty() {
+                    parser.content.push('\n');
+                }
+                parser.content.push_str(line);
+                parser.content.push('\n');
+            }
+        }
+
+        if parser.in_block && !parser.content.is_empty() {
+            Some(parser.content)
+        } else {
+            None
+        }
+    }
 }
 
 #[cfg(test)]
