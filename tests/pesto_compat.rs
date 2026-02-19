@@ -1,7 +1,8 @@
 use std::fs;
 use std::path::{Path, PathBuf};
 
-use nixdoc::{DocComment, ParseError};
+use expect_test::expect;
+use nixdoc::{DocComment, ParseError, WarningKind};
 
 fn collect_nix_files(dir: &Path) -> Vec<PathBuf> {
     let mut out = Vec::new();
@@ -61,6 +62,8 @@ fn pesto_test_data() {
     let mut total = 0usize;
     let mut ok = 0usize;
     let mut empty = 0usize;
+    let mut warn_unknown = 0usize;
+    let mut warn_empty_section = 0usize;
     let mut unclosed: Vec<(PathBuf, String)> = Vec::new();
 
     for file in &files {
@@ -89,6 +92,12 @@ fn pesto_test_data() {
                             file.display()
                         );
                     }
+                    for w in &doc.warnings {
+                        match w.kind {
+                            WarningKind::UnknownSection => warn_unknown += 1,
+                            WarningKind::EmptySection => warn_empty_section += 1,
+                        }
+                    }
                 }
                 Err(ParseError::EmptyComment) => empty += 1,
                 Err(ParseError::NotDocComment) => {}
@@ -99,17 +108,9 @@ fn pesto_test_data() {
         }
     }
 
-    println!(
-        "\n.nix files: {}  comments: {}  ok: {}  empty: {}  unclosed: {}",
-        files.len(),
-        total,
-        ok,
-        empty,
-        unclosed.len()
-    );
     for (path, raw) in &unclosed {
-        println!(
-            "  UNCLOSED {} - {:?}",
+        eprintln!(
+            "UNCLOSED {} - {:?}",
             path.display(),
             &raw[..raw.len().min(80)]
         );
@@ -120,4 +121,25 @@ fn pesto_test_data() {
         "{} unclosed comment(s)",
         unclosed.len()
     );
+
+    // Snapshot corpus-wide statistics. If these numbers change, the diff makes
+    // it obvious whether we regressed (counts go up unexpectedly) or improved
+    // (warning counts drop after a parser fix).
+    let stats = format!(
+        "files: {}\ncomments: {}\nok: {}\nempty: {}\nwarn_unknown_section: {}\nwarn_empty_section: {}",
+        files.len(),
+        total,
+        ok,
+        empty,
+        warn_unknown,
+        warn_empty_section,
+    );
+    expect![[r#"
+        files: 180
+        comments: 402
+        ok: 402
+        empty: 0
+        warn_unknown_section: 6
+        warn_empty_section: 10"#]]
+    .assert_eq(&stats);
 }

@@ -1,0 +1,21 @@
+Ok(
+    DocComment {
+        raw_content: "Pipes a value through a list of functions, left to right.\n\n# Example\n\n```nix\npipe 2 [\n    (x: x + 2)  # 2 + 2 = 4\n    (x: x * 2)  # 4 * 2 = 8\n  ]\n  => 8\n  # ideal to do text transformations\n  pipe [ \"a/b\" \"a/c\" ] [\n    # create the cp command\n    (map (file: ''cp \"${src}/${file}\" $out\\n''))\n    # concatenate all commands into one string\n    lib.concatStrings\n    # make that string into a nix derivation\n    (pkgs.runCommand \"copy-to-out\" {})\n  ]\n  => <drv which copies all files to $out>\nThe output type of each function has to be the input type\nof the next function, and the last function returns the\nfinal value.\n```\n\n# Type\n\n```\npipe :: a -> [<functions>] -> <return type of last function>\n```\n\n# Arguments\n\n- [val]\n- [functions]",
+        description: "Pipes a value through a list of functions, left to right.",
+        sections: [
+            Section {
+                heading: "Example",
+                content: "```nix\npipe 2 [\n    (x: x + 2)  # 2 + 2 = 4\n    (x: x * 2)  # 4 * 2 = 8\n  ]\n  => 8\n  # ideal to do text transformations\n  pipe [ \"a/b\" \"a/c\" ] [\n    # create the cp command\n    (map (file: ''cp \"${src}/${file}\" $out\\n''))\n    # concatenate all commands into one string\n    lib.concatStrings\n    # make that string into a nix derivation\n    (pkgs.runCommand \"copy-to-out\" {})\n  ]\n  => <drv which copies all files to $out>\nThe output type of each function has to be the input type\nof the next function, and the last function returns the\nfinal value.\n```",
+            },
+            Section {
+                heading: "Type",
+                content: "```\npipe :: a -> [<functions>] -> <return type of last function>\n```",
+            },
+            Section {
+                heading: "Arguments",
+                content: "- [val]\n- [functions]",
+            },
+        ],
+        warnings: [],
+    },
+)

@@ -1,0 +1,21 @@
+Ok(
+    DocComment {
+        raw_content: "Create a list consisting of a single element.  `singleton x` is\nsometimes more convenient with respect to indentation than `[x]`\nwhen x spans multiple lines.\n\n# Example\n\n```nix\nsingleton \"foo\"\n=> [ \"foo\" ]\n```\n\n# Type\n\n```\nsingleton :: a -> [a]\n```\n\n# Arguments\n\n- [x]",
+        description: "Create a list consisting of a single element.  `singleton x` is\nsometimes more convenient with respect to indentation than `[x]`\nwhen x spans multiple lines.",
+        sections: [
+            Section {
+                heading: "Example",
+                content: "```nix\nsingleton \"foo\"\n=> [ \"foo\" ]\n```",
+            },
+            Section {
+                heading: "Type",
+                content: "```\nsingleton :: a -> [a]\n```",
+            },
+            Section {
+                heading: "Arguments",
+                content: "- [x]",
+            },
+        ],
+        warnings: [],
+    },
+)

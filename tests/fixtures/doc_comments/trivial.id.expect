@@ -1,0 +1,17 @@
+Ok(
+    DocComment {
+        raw_content: "The identity function\nFor when you need a function that does \"nothing\".\n\n# Type\n\n```\nid :: a -> a\n```\n\n# Arguments\n\n- [x] The value to return",
+        description: "The identity function\nFor when you need a function that does \"nothing\".",
+        sections: [
+            Section {
+                heading: "Type",
+                content: "```\nid :: a -> a\n```",
+            },
+            Section {
+                heading: "Arguments",
+                content: "- [x] The value to return",
+            },
+        ],
+        warnings: [],
+    },
+)

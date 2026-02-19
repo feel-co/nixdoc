@@ -1,0 +1,38 @@
+/**
+    Pipes a value through a list of functions, left to right.
+
+    # Example
+
+    ```nix
+    pipe 2 [
+        (x: x + 2)  # 2 + 2 = 4
+        (x: x * 2)  # 4 * 2 = 8
+      ]
+      => 8
+      # ideal to do text transformations
+      pipe [ "a/b" "a/c" ] [
+        # create the cp command
+        (map (file: ''cp "${src}/${file}" $out\n''))
+        # concatenate all commands into one string
+        lib.concatStrings
+        # make that string into a nix derivation
+        (pkgs.runCommand "copy-to-out" {})
+      ]
+      => <drv which copies all files to $out>
+    The output type of each function has to be the input type
+    of the next function, and the last function returns the
+    final value.
+    ```
+
+    # Type
+
+    ```
+    pipe :: a -> [<functions>] -> <return type of last function>
+    ```
+
+    # Arguments
+
+    - [val]
+    - [functions]
+
+  */

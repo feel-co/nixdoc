@@ -11,10 +11,13 @@ categories = ["parsing", "text-processing"]
 rust-version = "1.91.0"
 
 [lib]
-crate-type = ["cdylib", "staticlib"]
+crate-type = ["cdylib", "staticlib", "rlib"]
 
 [dependencies]
 thiserror = "2.0.18"
+
+[dev-dependencies]
+expect-test = "1.5.1"
 
 [features]
 default = []

@@ -1,0 +1,15 @@
+/**
+    The identity function
+    For when you need a function that does "nothing".
+
+    # Type
+
+    ```
+    id :: a -> a
+    ```
+
+    # Arguments
+
+    - [x] The value to return
+
+  */

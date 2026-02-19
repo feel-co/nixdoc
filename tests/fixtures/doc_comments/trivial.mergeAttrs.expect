@@ -1,0 +1,17 @@
+Ok(
+    DocComment {
+        raw_content: "Merge two attribute sets shallowly, right side trumps left\nmergeAttrs :: attrs -> attrs -> attrs\n\n# Example\n\n```nix\nmergeAttrs { a = 1; b = 2; } { b = 3; c = 4; }\n=> { a = 1; b = 3; c = 4; }\n```\n\n# Arguments\n\n- [x] Left attribute set\n- [y] Right attribute set (higher precedence for equal keys)",
+        description: "Merge two attribute sets shallowly, right side trumps left\nmergeAttrs :: attrs -> attrs -> attrs",
+        sections: [
+            Section {
+                heading: "Example",
+                content: "```nix\nmergeAttrs { a = 1; b = 2; } { b = 3; c = 4; }\n=> { a = 1; b = 3; c = 4; }\n```",
+            },
+            Section {
+                heading: "Arguments",
+                content: "- [x] Left attribute set\n- [y] Right attribute set (higher precedence for equal keys)",
+            },
+        ],
+        warnings: [],
+    },
+)

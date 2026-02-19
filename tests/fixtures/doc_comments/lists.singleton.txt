@@ -1,0 +1,23 @@
+/**
+    Create a list consisting of a single element.  `singleton x` is
+    sometimes more convenient with respect to indentation than `[x]`
+    when x spans multiple lines.
+
+    # Example
+
+    ```nix
+    singleton "foo"
+    => [ "foo" ]
+    ```
+
+    # Type
+
+    ```
+    singleton :: a -> [a]
+    ```
+
+    # Arguments
+
+    - [x]
+
+  */

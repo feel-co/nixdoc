@@ -1,0 +1,21 @@
+Ok(
+    DocComment {
+        raw_content: "Flip the order of the arguments of a binary function.\n\n# Example\n\n```nix\nflip concat [1] [2]\n=> [ 2 1 ]\n```\n\n# Type\n\n```\nflip :: (a -> b -> c) -> (b -> a -> c)\n```\n\n# Arguments\n\n- [f]\n- [a]\n- [b]",
+        description: "Flip the order of the arguments of a binary function.",
+        sections: [
+            Section {
+                heading: "Example",
+                content: "```nix\nflip concat [1] [2]\n=> [ 2 1 ]\n```",
+            },
+            Section {
+                heading: "Type",
+                content: "```\nflip :: (a -> b -> c) -> (b -> a -> c)\n```",
+            },
+            Section {
+                heading: "Arguments",
+                content: "- [f]\n- [a]\n- [b]",
+            },
+        ],
+        warnings: [],
+    },
+)

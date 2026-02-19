@@ -1,0 +1,21 @@
+Ok(
+    DocComment {
+        raw_content: "The constant function\nIgnores the second argument. If called with only one argument,\nconstructs a function that always returns a static value.\n\n# Example\n\n```nix\nlet f = const 5; in f 10\n=> 5\n```\n\n# Type\n\n```\nconst :: a -> b -> a\n```\n\n# Arguments\n\n- [x] Value to return\n- [y] Value to ignore",
+        description: "The constant function\nIgnores the second argument. If called with only one argument,\nconstructs a function that always returns a static value.",
+        sections: [
+            Section {
+                heading: "Example",
+                content: "```nix\nlet f = const 5; in f 10\n=> 5\n```",
+            },
+            Section {
+                heading: "Type",
+                content: "```\nconst :: a -> b -> a\n```",
+            },
+            Section {
+                heading: "Arguments",
+                content: "- [x] Value to return\n- [y] Value to ignore",
+            },
+        ],
+        warnings: [],
+    },
+)

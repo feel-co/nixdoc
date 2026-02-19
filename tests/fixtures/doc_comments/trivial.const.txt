@@ -1,0 +1,24 @@
+/**
+    The constant function
+    Ignores the second argument. If called with only one argument,
+    constructs a function that always returns a static value.
+
+    # Example
+
+    ```nix
+    let f = const 5; in f 10
+    => 5
+    ```
+
+    # Type
+
+    ```
+    const :: a -> b -> a
+    ```
+
+    # Arguments
+
+    - [x] Value to return
+    - [y] Value to ignore
+
+  */
