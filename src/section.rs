@@ -22,6 +22,7 @@
 /// The `# Type` heading produces a `Section` with `heading = "Type"` whose
 /// `content` is the fenced code block for the type signature.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Section {
     /// The heading text (without the leading `# `).
     pub heading: String,
@@ -41,6 +42,7 @@ impl Section {
 /// The Nixdoc specification (RFC145) defines a set of well-known section
 /// names. Any heading not in this set produces `SectionKind::Unknown`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SectionKind {
     /// `# Type` - the Haskell-style type signature of the function.
     Type,
@@ -111,6 +113,7 @@ impl SectionKind {
 /// Arguments are expected in the form `- [name] Description text` where
 /// `name` is the argument identifier and the rest is an optional description.
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Argument {
     /// The argument name, as written inside `[...]`.
     pub name: String,
@@ -122,6 +125,7 @@ pub struct Argument {
 ///
 /// Each example corresponds to a single fenced code block (` ``` ` or `~~~`).
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Example {
     /// The language specifier from the fenced code block, if present (e.g., `"nix"`).
     pub language: Option<String>,

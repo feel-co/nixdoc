@@ -56,6 +56,7 @@ pub use section::{Argument, Example, Section, SectionKind};
 ///
 /// Obtain one via [`DocComment::parse`].
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct DocComment {
     /// The normalized comment body with delimiters stripped and indentation removed.
     pub raw_content: String,
