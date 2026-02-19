@@ -1,0 +1,8 @@
+# Don't diff churn.
+**/fixtures/*
+
+# Git Configuration files
+*.gitattributes linguist-detectable=false
+*.gitattributes linguist-documentation=false
+*.gitignore linguist-detectable=false
+*.gitignore linguist-documentation=false

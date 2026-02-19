@@ -1,0 +1,19 @@
+[package]
+name = "nixdoc"
+version = "0.1.0"
+edition = "2024"
+license = "MPL-2.0"
+keywords = ["nix", "nixdoc", "documentation", "parser"]
+categories = ["parsing", "text-processing"]
+
+[dependencies]
+thiserror = "2.0.18"
+
+[features]
+default = []
+serde = ["dep:serde"]
+
+[dependencies.serde]
+version = "1.0.228"
+features = ["derive"]
+optional = true
