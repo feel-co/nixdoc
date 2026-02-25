@@ -2,6 +2,7 @@
 
 use std::{
   ffi::CString,
+  mem::ManuallyDrop,
   os::raw::{c_char, c_int},
   panic::catch_unwind,
   ptr, slice,
@@ -129,7 +130,9 @@ fn rust_string_to_cstring(s: &str) -> *mut c_char {
 ///
 /// `doc` must be a valid pointer returned by `nixdoc_parse_into`.
 #[unsafe(no_mangle)]
-pub unsafe extern "C" fn nixdoc_title(doc: *const NixdocDocComment) -> *mut c_char {
+pub unsafe extern "C" fn nixdoc_title(
+  doc: *const NixdocDocComment,
+) -> *mut c_char {
   if doc.is_null() {
     return rust_string_to_cstring("");
   }
@@ -270,7 +273,7 @@ pub unsafe extern "C" fn nixdoc_arguments(
       .collect();
 
     let data = items.as_ptr() as *mut *mut c_char;
-    std::mem::forget(items);
+    let _ = ManuallyDrop::new(items);
 
     Box::into_raw(Box::new(NixdocStringArray { data, len }))
   });
@@ -314,7 +317,7 @@ pub unsafe extern "C" fn nixdoc_examples(
       .collect();
 
     let data = items.as_ptr() as *mut *mut c_char;
-    std::mem::forget(items);
+    let _ = ManuallyDrop::new(items);
 
     Box::into_raw(Box::new(NixdocStringArray { data, len }))
   });
@@ -354,7 +357,7 @@ pub unsafe extern "C" fn nixdoc_notes(
       .collect();
 
     let data = items.as_ptr() as *mut *mut c_char;
-    std::mem::forget(items);
+    let _ = ManuallyDrop::new(items);
 
     Box::into_raw(Box::new(NixdocStringArray { data, len }))
   });
@@ -392,7 +395,7 @@ pub unsafe extern "C" fn nixdoc_warnings(
       warnings.iter().map(|w| rust_string_to_cstring(w)).collect();
 
     let data = items.as_ptr() as *mut *mut c_char;
-    std::mem::forget(items);
+    let _ = ManuallyDrop::new(items);
 
     Box::into_raw(Box::new(NixdocStringArray { data, len }))
   });
