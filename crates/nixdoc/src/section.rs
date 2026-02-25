@@ -26,17 +26,17 @@ use alloc::string::{String, ToString};
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Section {
-    /// The heading text (without the leading `# `).
-    pub heading: String,
-    /// The section body as normalized Markdown text.
-    pub content: String,
+  /// The heading text (without the leading `# `).
+  pub heading: String,
+  /// The section body as normalized Markdown text.
+  pub content: String,
 }
 
 impl Section {
-    /// Returns the semantic kind of this section based on the heading.
-    pub fn kind(&self) -> SectionKind {
-        SectionKind::from_heading(&self.heading)
-    }
+  /// Returns the semantic kind of this section based on the heading.
+  pub fn kind(&self) -> SectionKind {
+    SectionKind::from_heading(&self.heading)
+  }
 }
 
 /// The semantic kind of a Nixdoc section, derived from its heading.
@@ -46,68 +46,71 @@ impl Section {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SectionKind {
-    /// `# Type` - the Haskell-style type signature of the function.
-    Type,
+  /// `# Type` - the Haskell-style type signature of the function.
+  Type,
 
-    /// `# Arguments` or `# Args` - documentation for each argument.
-    Arguments,
+  /// `# Arguments` or `# Args` - documentation for each argument.
+  Arguments,
 
-    /// `# Example` - a single usage example.
-    Example,
+  /// `# Example` - a single usage example.
+  Example,
 
-    /// `# Examples` - multiple usage examples.
-    Examples,
+  /// `# Examples` - multiple usage examples.
+  Examples,
 
-    /// `# Note` - an informational note for readers.
-    Note,
+  /// `# Note` - an informational note for readers.
+  Note,
 
-    /// `# Notes` - multiple informational notes.
-    Notes,
+  /// `# Notes` - multiple informational notes.
+  Notes,
 
-    /// `# Warning`, `# Warnings`, or `# Caution` - an important caveat.
-    Warning,
+  /// `# Warning`, `# Warnings`, or `# Caution` - an important caveat.
+  Warning,
 
-    /// `# Deprecated` - a deprecation notice.
-    Deprecated,
+  /// `# Deprecated` - a deprecation notice.
+  Deprecated,
 
-    /// Any other section heading not covered above.
-    Unknown(String),
+  /// Any other section heading not covered above.
+  Unknown(String),
 }
 
 impl SectionKind {
-    /// Identify the section kind from a heading string (case-insensitive).
-    ///
-    /// # Examples
-    ///
-    /// ```rust
-    /// use nixdoc::SectionKind;
-    ///
-    /// assert_eq!(SectionKind::from_heading("Type"), SectionKind::Type);
-    /// assert_eq!(SectionKind::from_heading("type"), SectionKind::Type);
-    /// assert_eq!(SectionKind::from_heading("ARGUMENTS"), SectionKind::Arguments);
-    /// assert_eq!(
-    ///     SectionKind::from_heading("See Also"),
-    ///     SectionKind::Unknown("see also".to_string()),
-    /// );
-    /// ```
-    pub fn from_heading(heading: &str) -> Self {
-        match heading.to_lowercase().as_str() {
-            "type" => Self::Type,
-            "arguments" | "args" => Self::Arguments,
-            "example" => Self::Example,
-            "examples" => Self::Examples,
-            "note" => Self::Note,
-            "notes" => Self::Notes,
-            "warning" | "warnings" | "caution" => Self::Warning,
-            "deprecated" => Self::Deprecated,
-            other => Self::Unknown(other.to_string()),
-        }
+  /// Identify the section kind from a heading string (case-insensitive).
+  ///
+  /// # Examples
+  ///
+  /// ```rust
+  /// use nixdoc::SectionKind;
+  ///
+  /// assert_eq!(SectionKind::from_heading("Type"), SectionKind::Type);
+  /// assert_eq!(SectionKind::from_heading("type"), SectionKind::Type);
+  /// assert_eq!(
+  ///   SectionKind::from_heading("ARGUMENTS"),
+  ///   SectionKind::Arguments
+  /// );
+  /// assert_eq!(
+  ///   SectionKind::from_heading("See Also"),
+  ///   SectionKind::Unknown("see also".to_string()),
+  /// );
+  /// ```
+  pub fn from_heading(heading: &str) -> Self {
+    match heading.to_lowercase().as_str() {
+      "type" => Self::Type,
+      "arguments" | "args" => Self::Arguments,
+      "example" => Self::Example,
+      "examples" => Self::Examples,
+      "note" => Self::Note,
+      "notes" => Self::Notes,
+      "warning" | "warnings" | "caution" => Self::Warning,
+      "deprecated" => Self::Deprecated,
+      other => Self::Unknown(other.to_string()),
     }
+  }
 
-    /// Returns `true` if this is a recognized/known section kind.
-    pub fn is_known(&self) -> bool {
-        !matches!(self, Self::Unknown(_))
-    }
+  /// Returns `true` if this is a recognized/known section kind.
+  pub fn is_known(&self) -> bool {
+    !matches!(self, Self::Unknown(_))
+  }
 }
 
 /// A parsed function argument from the `# Arguments` section.
@@ -117,10 +120,10 @@ impl SectionKind {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Argument {
-    /// The argument name, as written inside `[...]`.
-    pub name: String,
-    /// The argument description text (may be empty).
-    pub description: String,
+  /// The argument name, as written inside `[...]`.
+  pub name:        String,
+  /// The argument description text (may be empty).
+  pub description: String,
 }
 
 /// A code example extracted from an `# Example` or `# Examples` section.
@@ -129,8 +132,9 @@ pub struct Argument {
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Example {
-    /// The language specifier from the fenced code block, if present (e.g., `"nix"`).
-    pub language: Option<String>,
-    /// The raw code content.
-    pub code: String,
+  /// The language specifier from the fenced code block, if present (e.g.,
+  /// `"nix"`).
+  pub language: Option<String>,
+  /// The raw code content.
+  pub code:     String,
 }
