@@ -57,9 +57,11 @@
 
 #![no_std]
 
-#[macro_use] extern crate alloc;
+#[macro_use]
+extern crate alloc;
 
-#[cfg(feature = "std")] extern crate std;
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod error;
 pub mod parser;
@@ -121,6 +123,7 @@ impl DocComment {
   /// );
   /// assert_eq!(DocComment::parse("/** */"), Err(ParseError::EmptyComment));
   /// ```
+  #[must_use]
   pub fn parse(input: &str) -> Result<Self, ParseError> {
     parser::parse(input)
   }
