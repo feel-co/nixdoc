@@ -5,7 +5,8 @@ use std::{
   mem::ManuallyDrop,
   os::raw::{c_char, c_int},
   panic::catch_unwind,
-  ptr, slice,
+  ptr,
+  slice,
 };
 
 use nixdoc::DocComment;
@@ -23,7 +24,7 @@ pub struct NixdocDocComment {
 #[repr(C)]
 pub struct NixdocStringArray {
   pub data: *mut *mut c_char,
-  pub len: usize,
+  pub len:  usize,
 }
 
 /// Parses a Nix doc comment string.
@@ -260,7 +261,7 @@ pub unsafe extern "C" fn nixdoc_arguments(
     if len == 0 {
       return Box::into_raw(Box::new(NixdocStringArray {
         data: ptr::null_mut(),
-        len: 0,
+        len:  0,
       }));
     }
 
@@ -303,7 +304,7 @@ pub unsafe extern "C" fn nixdoc_examples(
     if len == 0 {
       return Box::into_raw(Box::new(NixdocStringArray {
         data: ptr::null_mut(),
-        len: 0,
+        len:  0,
       }));
     }
 
@@ -347,7 +348,7 @@ pub unsafe extern "C" fn nixdoc_notes(
     if len == 0 {
       return Box::into_raw(Box::new(NixdocStringArray {
         data: ptr::null_mut(),
-        len: 0,
+        len:  0,
       }));
     }
 
@@ -387,7 +388,7 @@ pub unsafe extern "C" fn nixdoc_warnings(
     if len == 0 {
       return Box::into_raw(Box::new(NixdocStringArray {
         data: ptr::null_mut(),
-        len: 0,
+        len:  0,
       }));
     }
 

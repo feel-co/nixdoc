@@ -4,13 +4,14 @@
 
 [RFC 145]: https://github.com/NixOS/rfcs/blob/master/rfcs/0145-nixdoc-language.md
 
-Parser for Nixdoc documentation comments implementing the [RFC 145] format for
-documenting Nix library functions. While the Nixdoc format is not enforced by
-any tooling, it is somewhat widely adopted and is treated as a formal
-specification. Nixdoc uses `/** … */` doc comments containing Markdown with
-structured sections introduced by level-1 headings (`# Section`). This crate, in
-turn, parses that format into a typed `DocComment` structure, extracting the
-description, type signature, arguments, examples, and any other sections.
+Small, robust and powerful parser for Nixdoc comments implementing the [RFC 145]
+format for documenting Nix library functions. While the Nixdoc format is not
+enforced by any tooling, it is somewhat widely adopted and is treated as a
+formal specification. Nixdoc uses `/** … */` doc comments containing Markdown
+with structured sections introduced by level-1 headings (`# Section`). This
+crate, in turn, parses that format into a typed `DocComment` structure,
+extracting the description, type signature, arguments, examples, and any other
+sections.
 
 ## Installation
 
@@ -21,13 +22,6 @@ adding it to your Cargo manifest with the latest version:
 [dependencies]
 nixdoc = "0.2"
 ```
-
-## Feature flags
-
-| Feature | Default | Description |
-|---------|---------|-------------|
-| `std`   | yes     | Link against the standard library. When disabled the crate is `no_std` (requires `alloc`). |
-| `serde` | no      | Derive `serde::Serialize`/`Deserialize` on all public types. |
 
 ## Usage
 
@@ -59,17 +53,17 @@ assert_eq!(args[1].name, "b");
 
 ### Type Signatures
 
-```rust
+````rust
 use nixdoc::DocComment;
 
 let input = "/**\n  f.\n\n  # Type\n\n  ```\n  f :: Int -> Int\n  ```\n*/";
 let doc = DocComment::parse(input).unwrap();
 assert_eq!(doc.type_sig(), Some("f :: Int -> Int\n".to_string()));
-```
+````
 
 ### Examples
 
-```rust
+````rust
 use nixdoc::DocComment;
 
 let input = "/**\n  f.\n\n  # Example\n\n  ```nix\n  f 1\n  => 1\n  ```\n*/";
@@ -77,7 +71,7 @@ let doc = DocComment::parse(input).unwrap();
 let examples = doc.examples();
 assert_eq!(examples.len(), 1);
 assert_eq!(examples[0].language, Some("nix".to_string()));
-```
+````
 
 ### Notes, Warnings, and Deprecation
 
@@ -93,25 +87,31 @@ assert!(doc.is_deprecated());
 assert_eq!(doc.deprecation_notice(), Some("Use `newFn` instead."));
 ```
 
-### no_std Support
+### `no_std` Support
 
-This crate supports `no_std`. Disable default features to use it in embedded environments:
+This crate supports `no_std`. You may disable the default features via
+`default-features = false` if you must parse Nixdoc inside an embedded
+environment or similar:
 
 ```toml
 [dependencies]
 nixdoc = { version = "0.2", default-features = false }
 ```
 
-When using `no_std`, you must enable the `alloc` crate and link `libcore` or `liballoc`.
+When using `no_std`, you must enable the `alloc` crate and link `libcore` or
+`liballoc`.
 
 ### C FFI Bindings
 
-For C/C++ integration, use the companion `nixdoc-ffi` crate:
+This crate provides a companion crate under `nixdoc-ffi` for C, C++ or Nim
+integration:
 
 ```toml
 [dependencies]
 nixdoc-ffi = "0.2"
 ```
+
+Then, after wrapping the FFI interface, you may consume it in your C program:
 
 ```c
 #include <nixdoc.h>
@@ -131,11 +131,16 @@ int main() {
 }
 ```
 
-Build the shared library:
+While memory safety is not guaranteed, there has been additional care on helping
+promote memory safety. The FFI interface has been annotated with safety comments
+to provide guidance on what to look for.
+
+You may consume the FFI crate as either a dynamic crate or a static crate.
+Simply build the FFI crate, and consume whichever library you need.
 
 ```bash
-cargo build -p nixdoc-ffi
 # Produces libnixdoc.so (shared) and libnixdoc.a (static)
+$ cargo build -p nixdoc-ffi
 ```
 
 ## Comment format
@@ -156,13 +161,21 @@ Recognised section headings (case-insensitive):
 
 ## Development
 
+Development tooling is provided by the default dev shell. You may use either
+`nix develop` or use [Direnv](https://direnv.net).
+
 ```bash
 # Run with Nix flake
-nix develop
+$ nix develop
 
 # Run tests
-cargo test
+$ cargo nextest run
 ```
+
+If you are interested in contributing, please make sure you format your code
+with `cargo fmt` and make sure all of your tests pass. We use `cargo-nextest`
+for faster parallel test execution, but `cargo test` works as well. If adding
+new features, please make sure that all new features are _thoroughly_ tested.
 
 ## License
 
@@ -177,7 +190,7 @@ is provided [here](https://www.mozilla.org/en-US/MPL/2.0/).
 
 ### Attributions
 
-[noogle]: https://github.com/nix-community/noogle?
+[noogle]: https://github.com/nix-community/noogle
 
 This project is greatly inspired by [noogle]'s Pesto module. While pesto is a
 CLI and prefers to consume the `rnix` parser, `nixdoc` is completely standalone

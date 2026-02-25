@@ -57,11 +57,9 @@
 
 #![no_std]
 
-#[macro_use]
-extern crate alloc;
+#[macro_use] extern crate alloc;
 
-#[cfg(feature = "std")]
-extern crate std;
+#[cfg(feature = "std")] extern crate std;
 
 pub mod error;
 pub mod parser;
