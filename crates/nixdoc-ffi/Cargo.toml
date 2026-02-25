@@ -1,0 +1,18 @@
+[package]
+name = "nixdoc-ffi"
+description = "C shared/static library build of nixdoc"
+keywords = ["nix", "nixdoc", "documentation", "parser", "ffi"]
+categories = ["parsing", "text-processing"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "nixdoc"
+crate-type = ["cdylib", "staticlib"]
+
+[dependencies]
+nixdoc = { workspace = true, features = ["std"] }

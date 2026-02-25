@@ -1,3 +1,4 @@
+use alloc::string::String;
 use thiserror::Error;
 
 /// Errors that can occur while parsing a Nixdoc comment.

@@ -6,7 +6,7 @@ use std::panic::catch_unwind;
 use std::ptr;
 use std::slice;
 
-use crate::DocComment;
+use nixdoc::DocComment;
 
 const NIXDOC_SUCCESS: c_int = 0;
 const NIXDOC_ERROR_PARSE: c_int = 1;
@@ -91,7 +91,7 @@ pub unsafe extern "C" fn nixdoc_parse_into(
 #[unsafe(no_mangle)]
 pub unsafe extern "C" fn nixdoc_free(ptr: *mut NixdocDocComment) {
     if !ptr.is_null() {
-        drop(Box::from_raw(ptr));
+        drop(Box::from_raw(ptr as *mut DocComment));
     }
 }
 
@@ -117,7 +117,6 @@ pub unsafe extern "C" fn nixdoc_is_doc_comment(input: *const c_char) -> bool {
 }
 
 fn rust_string_to_cstring(s: &str) -> *mut c_char {
-    use std::ffi::CString;
     CString::new(s)
         .unwrap_or_else(|_| CString::new("").unwrap())
         .into_raw()

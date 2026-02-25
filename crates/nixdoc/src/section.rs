@@ -1,3 +1,5 @@
+use alloc::string::{String, ToString};
+
 /// A section in a Nixdoc comment.
 ///
 /// Sections are delimited by level-1 Markdown headings (`# Section Name`).

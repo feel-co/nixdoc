@@ -1,0 +1,31 @@
+[package]
+name = "nixdoc"
+description = "Parser for Nixdoc documentation comments"
+keywords = ["nix", "nixdoc", "documentation", "parser"]
+categories = ["parsing", "text-processing"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+
+[lib]
+crate-type = ["rlib"]
+
+[dependencies]
+thiserror = { workspace = true }
+serde = { workspace = true, optional = true }
+
+[dev-dependencies]
+expect-test = { workspace = true }
+serde_json = { workspace = true }
+
+[features]
+default = ["std"]
+
+# Enables std: unlocks the full standard library, format! in warnings, etc.
+std = ["thiserror/std", "serde?/std"]
+
+# Enables serde Serialize/Deserialize derives on all public types.
+serde = ["dep:serde"]

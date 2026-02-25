@@ -1,3 +1,6 @@
+use alloc::string::{String, ToString};
+use alloc::vec::Vec;
+
 use crate::DocComment;
 use crate::error::{ParseError, ParseWarning, WarningKind};
 use crate::section::{Argument, Example, Section};
@@ -412,7 +415,7 @@ impl FenceParser {
                     parser.content.clear();
                 }
             } else if is_closing_fence(trimmed, parser.fence_char, parser.fence_len) {
-                blocks.push((parser.language.take(), std::mem::take(&mut parser.content)));
+                blocks.push((parser.language.take(), core::mem::take(&mut parser.content)));
                 parser.in_block = false;
             } else {
                 if !parser.content.is_empty() {

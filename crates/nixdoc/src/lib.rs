@@ -43,14 +43,33 @@
 //! Recognised section headings (case-insensitive):
 //! `Type`, `Arguments`/`Args`, `Example`, `Examples`, `Note`, `Notes`,
 //! `Warning`/`Warnings`/`Caution`, `Deprecated`.
+//!
+//! ## Feature flags
+//!
+//! | Feature | Default | Description |
+//! |---------|---------|-------------|
+//! | `std`   | yes     | Link against the standard library. When disabled the crate is `no_std` (requires `alloc`). |
+//! | `serde` | no      | Derive `serde::Serialize`/`Deserialize` on all public types. |
+//!
+//! For C FFI bindings see the companion `nixdoc-ffi` crate.
+
+#![no_std]
+
+#[macro_use]
+extern crate alloc;
+
+#[cfg(feature = "std")]
+extern crate std;
 
 pub mod error;
-pub mod ffi;
 pub mod parser;
 pub mod section;
 
 pub use error::{ParseError, ParseWarning, WarningKind};
 pub use section::{Argument, Example, Section, SectionKind};
+
+use alloc::string::String;
+use alloc::vec::Vec;
 
 /// A fully parsed Nixdoc documentation comment.
 ///
