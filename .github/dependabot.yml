@@ -12,3 +12,10 @@ updates:
     schedule:
       interval: "daily"
 
+  # Update used workflows
+  - package-ecosystem: nix
+    directory: "/"
+    schedule:
+      interval: "weekly"
+
+
