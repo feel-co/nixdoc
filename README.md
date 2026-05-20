@@ -2,7 +2,7 @@
 
 # nixdoc
 
-[RFC 145]: https://github.com/NixOS/rfcs/blob/master/rfcs/0145-nixdoc-language.md
+[RFC 145]: https://github.com/NixOS/rfcs/blob/master/rfcs/0145-doc-strings.md
 
 Small, robust and powerful parser for Nixdoc comments implementing the [RFC 145]
 format for documenting Nix library functions. While the Nixdoc format is not
