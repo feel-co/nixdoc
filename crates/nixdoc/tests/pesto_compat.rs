@@ -143,7 +143,7 @@ fn pesto_test_data() {
         comments: 402
         ok: 402
         empty: 0
-        warn_unknown_section: 6
+        warn_unknown_section: 0
         warn_empty_section: 10"#]]
   .assert_eq(&stats);
 }

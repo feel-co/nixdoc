@@ -37,9 +37,9 @@ fn roundtrip_full() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn roundtrip_with_warnings() {
+fn roundtrip_with_custom_section() {
   let doc = parse("/**\n  f.\n\n  # See Also\n\n  something\n*/");
-  assert!(!doc.warnings.is_empty());
+  assert!(doc.warnings.is_empty());
   let serialized = serde_json::to_string(&doc).unwrap();
   let back: DocComment = serde_json::from_str(&serialized).unwrap();
   assert_eq!(doc, back);
@@ -89,7 +89,7 @@ fn json_with_sections() {
 
 #[test]
 #[cfg(feature = "serde")]
-fn json_with_unknown_section_warning() {
+fn json_with_custom_section() {
   use expect_test::expect;
   let doc = parse("/**\n  f.\n\n  # See Also\n\n  something\n*/");
   expect![[r#"
@@ -102,12 +102,7 @@ fn json_with_unknown_section_warning() {
               "content": "something"
             }
           ],
-          "warnings": [
-            {
-              "kind": "UnknownSection",
-              "message": "unrecognized section heading: 'See Also'"
-            }
-          ]
+          "warnings": []
         }"#]]
   .assert_eq(&json(&doc));
 }

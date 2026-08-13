@@ -32,16 +32,6 @@ pub(crate) fn parse(input: &str) -> Result<DocComment, ParseError> {
   let mut warnings = Vec::new();
   let (description, sections) = parse_sections(&content, &mut warnings);
 
-  // Warn about any unrecognized section headings.
-  for section in &sections {
-    if !section.kind().is_known() {
-      warnings.push(ParseWarning {
-        kind:    WarningKind::UnknownSection,
-        message: format!("unrecognized section heading: '{}'", section.heading),
-      });
-    }
-  }
-
   Ok(DocComment {
     raw_content: content,
     description,
@@ -103,56 +93,6 @@ pub fn normalize(content: &str) -> String {
   joined.trim().to_string()
 }
 
-/// If `trimmed` (a line with leading whitespace already stripped) starts an
-/// opening code fence, return `(fence_char, fence_len, language)`.
-///
-/// Per CommonMark, a fence is 3+ identical backticks or tildes. The opening
-/// line may be followed by an optional language info string.
-fn parse_fence_open(trimmed: &str) -> Option<(char, usize, Option<String>)> {
-  let fence_char = if trimmed.starts_with("```") {
-    '`'
-  } else if trimmed.starts_with("~~~") {
-    '~'
-  } else {
-    return None;
-  };
-
-  let fence_len = trimmed.chars().take_while(|&c| c == fence_char).count();
-
-  // Everything after the fence chars is the info string (language).
-  // CommonMark: backtick info strings may not contain backticks.
-  let after = trimmed[fence_len..].trim();
-  let language = if after.is_empty() {
-    None
-  } else {
-    // Take only the first whitespace-delimited token as the language.
-    let lang = after.split_whitespace().next().unwrap_or("");
-    if lang.is_empty() {
-      None
-    } else {
-      Some(lang.to_string())
-    }
-  };
-
-  Some((fence_char, fence_len, language))
-}
-
-/// Returns `true` if `trimmed` is a valid closing fence for a code block that
-/// was opened with `fence_len` repetitions of `fence_char`.
-///
-/// Per CommonMark: the closing fence must consist of at least `fence_len`
-/// occurrences of `fence_char`, optionally followed by spaces, with nothing
-/// else on the line.
-fn is_closing_fence(trimmed: &str, fence_char: char, fence_len: usize) -> bool {
-  // All-ASCII fence characters, so char count == byte count here.
-  let count = trimmed.chars().take_while(|&c| c == fence_char).count();
-  if count < fence_len {
-    return false;
-  }
-  // Anything after the fence characters must be spaces only.
-  trimmed[count..].chars().all(|c| c == ' ')
-}
-
 /// Parse the normalized content into a (description, sections) pair.
 ///
 /// A level-1 Markdown heading (`# Heading`) at the start of a line begins a
@@ -164,94 +104,43 @@ fn parse_sections(
   content: &str,
   warnings: &mut Vec<ParseWarning>,
 ) -> (String, Vec<Section>) {
-  let mut sections: Vec<Section> = Vec::new();
-
-  // Lines accumulated before the first section heading.
-  let mut description_lines: Vec<&str> = Vec::new();
-  // True while we haven't yet seen any section heading.
-  let mut in_description = true;
-
-  // Current section being accumulated.
-  let mut current_heading: Option<String> = None;
-  let mut section_lines: Vec<&str> = Vec::new();
-
-  // Fenced-code-block tracking to avoid treating `# comment` inside code
-  // as section headings.  We store the fence character and its length so
-  // that 4-backtick (or longer) fences close correctly per CommonMark.
-  let mut in_code_block = false;
-  let mut fence_char: char = '`';
-  let mut fence_len: usize = 3;
-
-  for line in content.lines() {
-    let trimmed = line.trim_start();
-
-    // Update code-block state before deciding if the line is a heading.
-    if !in_code_block {
-      if let Some((fc, fl, _)) = parse_fence_open(trimmed) {
-        in_code_block = true;
-        fence_char = fc;
-        fence_len = fl;
+  let (blocks, _) = crate::markdown::scan(content);
+  let headings: Vec<_> = blocks
+    .iter()
+    .filter_map(|block| {
+      match block {
+        crate::markdown::Block::Heading {
+          level: 1,
+          text,
+          span,
+        } if !text.is_empty() => Some((text.as_str(), *span)),
+        _ => None,
       }
-    } else if is_closing_fence(trimmed, fence_char, fence_len) {
-      in_code_block = false;
+    })
+    .collect();
+
+  let Some((_, first_span)) = headings.first() else {
+    return (content.trim().to_string(), Vec::new());
+  };
+  let description = content[..first_span.start].trim().to_string();
+  let mut sections = Vec::with_capacity(headings.len());
+  for (index, (heading, span)) in headings.iter().enumerate() {
+    let end = headings
+      .get(index + 1)
+      .map_or(content.len(), |(_, next)| next.start);
+    let section_content = content[span.end..end].trim().to_string();
+    if section_content.is_empty() {
+      warnings.push(ParseWarning {
+        kind:    WarningKind::EmptySection,
+        message: format!("section '{heading}' has no content"),
+      });
     }
-
-    // Lines inside a code block are never section headings.
-    let is_heading_candidate = !in_code_block && line.starts_with("# ");
-
-    if is_heading_candidate {
-      let heading = line["# ".len()..].trim().to_string();
-
-      if !heading.is_empty() {
-        // Finalize what we were accumulating.
-        if in_description {
-          in_description = false;
-        } else if let Some(h) = current_heading.take() {
-          flush_section(&h, &section_lines, &mut sections, warnings);
-          section_lines.clear();
-        }
-        current_heading = Some(heading);
-        continue;
-      }
-    }
-
-    // Accumulate the line into the active buffer.
-    if in_description {
-      description_lines.push(line);
-    } else {
-      section_lines.push(line);
-    }
-  }
-
-  // Flush the last section or absorb remaining lines into the description.
-  if let Some(h) = current_heading {
-    flush_section(&h, &section_lines, &mut sections, warnings);
-  } else {
-    // No headings were ever seen; everything is the description.
-    description_lines.extend_from_slice(&section_lines);
-  }
-
-  let description = description_lines.join("\n").trim().to_string();
-  (description, sections)
-}
-
-fn flush_section(
-  heading: &str,
-  lines: &[&str],
-  sections: &mut Vec<Section>,
-  warnings: &mut Vec<ParseWarning>,
-) {
-  let content = lines.join("\n").trim().to_string();
-  if content.is_empty() {
-    warnings.push(ParseWarning {
-      kind:    WarningKind::EmptySection,
-      message: format!("section '{}' has no content", heading),
+    sections.push(Section {
+      heading: (*heading).to_string(),
+      content: section_content,
     });
   }
-  sections.push(Section {
-    heading: heading.to_string(),
-    content,
-  });
+  (description, sections)
 }
 
 /// Parse argument entries from the body of a `# Arguments` section.
@@ -326,9 +215,22 @@ pub(crate) fn parse_arguments(content: &str) -> Vec<Argument> {
 /// examples may appear in a single section, separated by prose or other
 /// content. Fences of 4 or more backticks/tildes are handled correctly.
 pub(crate) fn parse_examples(content: &str) -> Vec<Example> {
-  FenceParser::parse_blocks(content)
+  let (blocks, _) = crate::markdown::scan(content);
+  blocks
     .into_iter()
-    .map(|(language, code)| Example { language, code })
+    .filter_map(|block| {
+      match block {
+        crate::markdown::Block::FencedCode { info, code, .. } => {
+          Some(Example {
+            language: info.and_then(|info| {
+              info.split_whitespace().next().map(ToString::to_string)
+            }),
+            code,
+          })
+        },
+        _ => None,
+      }
+    })
     .collect()
 }
 
@@ -338,7 +240,13 @@ pub(crate) fn parse_examples(content: &str) -> Vec<Example> {
 /// `# Type` section. Returns `None` if no code block is found.
 /// Fences of 4 or more backticks/tildes are handled correctly.
 pub(crate) fn extract_first_code_block(content: &str) -> Option<String> {
-  FenceParser::first_block(content)
+  let (blocks, _) = crate::markdown::scan(content);
+  blocks.into_iter().find_map(|block| {
+    match block {
+      crate::markdown::Block::FencedCode { code, .. } => Some(code),
+      _ => None,
+    }
+  })
 }
 
 /// Extract a legacy inline type annotation from a description string.
@@ -387,91 +295,6 @@ fn parse_inline_type_line(line: &str) -> Option<&str> {
       .all(|c| c.is_alphanumeric() || c == '_' || c == '-' || c == '\'');
 
   if is_valid_ident { Some(line) } else { None }
-}
-
-struct FenceParser {
-  in_block:   bool,
-  fence_char: char,
-  fence_len:  usize,
-  content:    String,
-  language:   Option<String>,
-}
-
-impl FenceParser {
-  fn new() -> Self {
-    Self {
-      in_block:   false,
-      fence_char: '`',
-      fence_len:  3,
-      content:    String::new(),
-      language:   None,
-    }
-  }
-
-  fn parse_blocks(content: &str) -> Vec<(Option<String>, String)> {
-    let mut parser = Self::new();
-    let mut blocks = Vec::new();
-
-    for line in content.lines() {
-      let trimmed = line.trim_start();
-
-      if !parser.in_block {
-        if let Some((fc, fl, lang)) = parse_fence_open(trimmed) {
-          parser.in_block = true;
-          parser.fence_char = fc;
-          parser.fence_len = fl;
-          parser.language = lang;
-          parser.content.clear();
-        }
-      } else if is_closing_fence(trimmed, parser.fence_char, parser.fence_len) {
-        blocks
-          .push((parser.language.take(), core::mem::take(&mut parser.content)));
-        parser.in_block = false;
-      } else {
-        if !parser.content.is_empty() {
-          parser.content.push('\n');
-        }
-        parser.content.push_str(line);
-        parser.content.push('\n');
-      }
-    }
-
-    if parser.in_block && !parser.content.is_empty() {
-      blocks.push((parser.language.take(), parser.content));
-    }
-
-    blocks
-  }
-
-  fn first_block(content: &str) -> Option<String> {
-    let mut parser = Self::new();
-
-    for line in content.lines() {
-      let trimmed = line.trim_start();
-
-      if !parser.in_block {
-        if let Some((fc, fl, _)) = parse_fence_open(trimmed) {
-          parser.in_block = true;
-          parser.fence_char = fc;
-          parser.fence_len = fl;
-        }
-      } else if is_closing_fence(trimmed, parser.fence_char, parser.fence_len) {
-        return Some(parser.content);
-      } else {
-        if !parser.content.is_empty() {
-          parser.content.push('\n');
-        }
-        parser.content.push_str(line);
-        parser.content.push('\n');
-      }
-    }
-
-    if parser.in_block && !parser.content.is_empty() {
-      Some(parser.content)
-    } else {
-      None
-    }
-  }
 }
 
 #[cfg(test)]

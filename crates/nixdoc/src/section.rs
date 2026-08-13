@@ -39,10 +39,10 @@ impl Section {
   }
 }
 
-/// The semantic kind of a Nixdoc section, derived from its heading.
+/// The semantic kind of a nixpkgs-convention section.
 ///
-/// The Nixdoc specification (RFC145) defines a set of well-known section
-/// names. Any heading not in this set produces `SectionKind::Unknown`.
+/// RFC 145 permits arbitrary CommonMark. These variants describe optional
+/// ecosystem conventions; any other heading produces [`Self::Unknown`].
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub enum SectionKind {
@@ -70,7 +70,7 @@ pub enum SectionKind {
   /// `# Deprecated` - a deprecation notice.
   Deprecated,
 
-  /// Any other section heading not covered above.
+  /// Any valid custom CommonMark section heading.
   Unknown(String),
 }
 
@@ -137,4 +137,229 @@ pub struct Example {
   pub language: Option<String>,
   /// The raw code content.
   pub code:     String,
+}
+
+#[cfg(test)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn section_kind_from_heading_type() {
+    assert_eq!(SectionKind::from_heading("Type"), SectionKind::Type);
+    assert_eq!(SectionKind::from_heading("type"), SectionKind::Type);
+    assert_eq!(SectionKind::from_heading("TYPE"), SectionKind::Type);
+  }
+
+  #[test]
+  fn section_kind_from_heading_arguments() {
+    assert_eq!(
+      SectionKind::from_heading("Arguments"),
+      SectionKind::Arguments
+    );
+    assert_eq!(
+      SectionKind::from_heading("arguments"),
+      SectionKind::Arguments
+    );
+    assert_eq!(SectionKind::from_heading("Args"), SectionKind::Arguments);
+    assert_eq!(SectionKind::from_heading("args"), SectionKind::Arguments);
+    assert_eq!(
+      SectionKind::from_heading("ARGUMENTS"),
+      SectionKind::Arguments
+    );
+  }
+
+  #[test]
+  fn section_kind_from_heading_example() {
+    assert_eq!(SectionKind::from_heading("Example"), SectionKind::Example);
+    assert_eq!(SectionKind::from_heading("example"), SectionKind::Example);
+    assert_eq!(SectionKind::from_heading("Examples"), SectionKind::Examples);
+    assert_eq!(SectionKind::from_heading("examples"), SectionKind::Examples);
+  }
+
+  #[test]
+  fn section_kind_from_heading_note() {
+    assert_eq!(SectionKind::from_heading("Note"), SectionKind::Note);
+    assert_eq!(SectionKind::from_heading("note"), SectionKind::Note);
+    assert_eq!(SectionKind::from_heading("Notes"), SectionKind::Notes);
+    assert_eq!(SectionKind::from_heading("notes"), SectionKind::Notes);
+  }
+
+  #[test]
+  fn section_kind_from_heading_warning() {
+    assert_eq!(SectionKind::from_heading("Warning"), SectionKind::Warning);
+    assert_eq!(SectionKind::from_heading("warning"), SectionKind::Warning);
+    assert_eq!(SectionKind::from_heading("Warnings"), SectionKind::Warning);
+    assert_eq!(SectionKind::from_heading("warnings"), SectionKind::Warning);
+    assert_eq!(SectionKind::from_heading("Caution"), SectionKind::Warning);
+    assert_eq!(SectionKind::from_heading("caution"), SectionKind::Warning);
+  }
+
+  #[test]
+  fn section_kind_from_heading_deprecated() {
+    assert_eq!(
+      SectionKind::from_heading("Deprecated"),
+      SectionKind::Deprecated
+    );
+    assert_eq!(
+      SectionKind::from_heading("deprecated"),
+      SectionKind::Deprecated
+    );
+  }
+
+  #[test]
+  fn section_kind_from_heading_unknown() {
+    assert_eq!(
+      SectionKind::from_heading("See Also"),
+      SectionKind::Unknown("see also".to_string())
+    );
+    assert_eq!(
+      SectionKind::from_heading("Related"),
+      SectionKind::Unknown("related".to_string())
+    );
+    assert_eq!(
+      SectionKind::from_heading("Custom Section"),
+      SectionKind::Unknown("custom section".to_string())
+    );
+  }
+
+  #[test]
+  fn section_kind_is_known() {
+    assert!(SectionKind::Type.is_known());
+    assert!(SectionKind::Arguments.is_known());
+    assert!(SectionKind::Example.is_known());
+    assert!(SectionKind::Examples.is_known());
+    assert!(SectionKind::Note.is_known());
+    assert!(SectionKind::Notes.is_known());
+    assert!(SectionKind::Warning.is_known());
+    assert!(SectionKind::Deprecated.is_known());
+  }
+
+  #[test]
+  fn section_kind_unknown_is_not_known() {
+    assert!(!SectionKind::Unknown("foo".to_string()).is_known());
+  }
+
+  #[test]
+  fn section_kind_unknown_preserves_case() {
+    assert_eq!(
+      SectionKind::from_heading("See Also"),
+      SectionKind::Unknown("see also".to_string())
+    );
+  }
+
+  #[test]
+  fn section_kind_eq() {
+    assert_eq!(SectionKind::Type, SectionKind::Type);
+    assert_eq!(SectionKind::Arguments, SectionKind::Arguments);
+    assert_eq!(
+      SectionKind::Unknown("foo".to_string()),
+      SectionKind::Unknown("foo".to_string())
+    );
+  }
+
+  #[test]
+  fn section_kind_ne() {
+    assert_ne!(SectionKind::Type, SectionKind::Arguments);
+    assert_ne!(SectionKind::Type, SectionKind::Unknown("type".to_string()));
+  }
+
+  #[test]
+  fn section_new() {
+    let section = Section {
+      heading: "Type".to_string(),
+      content: "f :: Int -> Int".to_string(),
+    };
+    assert_eq!(section.heading, "Type");
+    assert_eq!(section.content, "f :: Int -> Int");
+  }
+
+  #[test]
+  fn section_kind() {
+    let section = Section {
+      heading: "Type".to_string(),
+      content: "f :: Int -> Int".to_string(),
+    };
+    assert_eq!(section.kind(), SectionKind::Type);
+  }
+
+  #[test]
+  fn section_clone() {
+    let section = Section {
+      heading: "Type".to_string(),
+      content: "content".to_string(),
+    };
+    let cloned = section.clone();
+    assert_eq!(section, cloned);
+  }
+
+  #[test]
+  fn argument_new() {
+    let arg = Argument {
+      name:        "x".to_string(),
+      description: "Input value".to_string(),
+    };
+    assert_eq!(arg.name, "x");
+    assert_eq!(arg.description, "Input value");
+  }
+
+  #[test]
+  fn argument_empty_description() {
+    let arg = Argument {
+      name:        "x".to_string(),
+      description: String::new(),
+    };
+    assert_eq!(arg.name, "x");
+    assert_eq!(arg.description, "");
+  }
+
+  #[test]
+  fn argument_clone() {
+    let arg = Argument {
+      name:        "x".to_string(),
+      description: "desc".to_string(),
+    };
+    let cloned = arg.clone();
+    assert_eq!(arg, cloned);
+  }
+
+  #[test]
+  fn example_new_with_language() {
+    let ex = Example {
+      language: Some("nix".to_string()),
+      code:     "f 1".to_string(),
+    };
+    assert_eq!(ex.language, Some("nix".to_string()));
+    assert_eq!(ex.code, "f 1");
+  }
+
+  #[test]
+  fn example_new_without_language() {
+    let ex = Example {
+      language: None,
+      code:     "some code".to_string(),
+    };
+    assert_eq!(ex.language, None);
+    assert_eq!(ex.code, "some code");
+  }
+
+  #[test]
+  fn example_clone() {
+    let ex = Example {
+      language: Some("nix".to_string()),
+      code:     "code".to_string(),
+    };
+    let cloned = ex.clone();
+    assert_eq!(ex, cloned);
+  }
+
+  #[test]
+  fn section_kind_hash() {
+    use std::collections::HashSet;
+    let mut set = HashSet::new();
+    set.insert(SectionKind::Type);
+    set.insert(SectionKind::Arguments);
+    set.insert(SectionKind::Unknown("foo".to_string()));
+    set.insert(SectionKind::Unknown("foo".to_string()));
+    assert_eq!(set.len(), 3);
+  }
 }

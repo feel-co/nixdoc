@@ -59,14 +59,17 @@
 
 #[macro_use] extern crate alloc;
 
-#[cfg(feature = "std")] extern crate std;
+#[cfg(any(feature = "std", test))] extern crate std;
 
+pub mod diagnostic;
 pub mod error;
+pub mod markdown;
 pub mod parser;
 pub mod section;
 
 use alloc::{string::String, vec::Vec};
 
+pub use diagnostic::{Diagnostic, DiagnosticCode, Severity, SourceSpan};
 pub use error::{ParseError, ParseWarning, WarningKind};
 pub use section::{Argument, Example, Section, SectionKind};
 
@@ -121,7 +124,6 @@ impl DocComment {
   /// );
   /// assert_eq!(DocComment::parse("/** */"), Err(ParseError::EmptyComment));
   /// ```
-  #[must_use]
   pub fn parse(input: &str) -> Result<Self, ParseError> {
     parser::parse(input)
   }
@@ -177,6 +179,36 @@ impl DocComment {
   /// Alias for [`Self::description`], matching the proposed API in the spec.
   pub fn main_content(&self) -> &str {
     self.description()
+  }
+
+  /// Returns structured, span-aware diagnostics for the normalized body.
+  ///
+  /// Spans refer to [`Self::raw_content`].
+  pub fn diagnostics(&self) -> Vec<Diagnostic> {
+    let (blocks, mut diagnostics) = markdown::scan(&self.raw_content);
+    let headings: Vec<_> = blocks
+      .iter()
+      .filter_map(|block| {
+        match block {
+          markdown::Block::Heading { level: 1, span, .. } => Some(*span),
+          _ => None,
+        }
+      })
+      .collect();
+    for (index, heading) in headings.iter().enumerate() {
+      let content_end = headings
+        .get(index + 1)
+        .map_or(self.raw_content.len(), |next| next.start);
+      if self.raw_content[heading.end..content_end].trim().is_empty() {
+        diagnostics.push(Diagnostic {
+          code:     DiagnosticCode::EmptySection,
+          severity: Severity::Warning,
+          message:  "section has no content".into(),
+          span:     *heading,
+        });
+      }
+    }
+    diagnostics
   }
 
   /// Returns the first section with the given heading, case-insensitively.

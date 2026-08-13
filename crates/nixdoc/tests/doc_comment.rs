@@ -363,14 +363,15 @@ fn code_hash_inside_example_not_a_heading() {
 }
 
 #[test]
-fn warns_on_unknown_section() {
+fn accepts_custom_commonmark_sections() {
   let input = "/**\n  f.\n\n  # See Also\n\n  Some content.\n*/";
   let doc = DocComment::parse(input).unwrap();
-  assert!(
+  assert!(doc.warnings.is_empty());
+  assert_eq!(
     doc
-      .warnings
-      .iter()
-      .any(|w| w.kind == WarningKind::UnknownSection)
+      .section("See Also")
+      .map(|section| section.content.as_str()),
+    Some("Some content.")
   );
 }
 
@@ -384,6 +385,12 @@ fn warns_on_empty_section() {
       .iter()
       .any(|w| w.kind == WarningKind::EmptySection)
   );
+  let diagnostic = doc
+    .diagnostics()
+    .into_iter()
+    .find(|diagnostic| diagnostic.code == DiagnosticCode::EmptySection)
+    .unwrap();
+  assert_eq!(&doc.raw_content[diagnostic.span.range()], "# Type");
 }
 
 #[test]
