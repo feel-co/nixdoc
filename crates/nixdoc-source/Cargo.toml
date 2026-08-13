@@ -1,0 +1,23 @@
+[package]
+name = "nixdoc-source"
+description = "RFC 145 documentation association for Nix source"
+keywords = ["nix", "nixdoc", "documentation", "lexer"]
+categories = ["parsing", "text-processing"]
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+homepage.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+nixdoc = { workspace = true, default-features = false }
+serde = { workspace = true, features = ["alloc"], optional = true }
+
+[dev-dependencies]
+serde_json = { workspace = true }
+
+[features]
+default = ["std"]
+std = ["nixdoc/std", "serde?/std"]
+serde = ["dep:serde", "nixdoc/serde"]

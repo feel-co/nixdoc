@@ -58,6 +58,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nixdoc-source"
+version = "0.2.0"
+dependencies = [
+ "nixdoc",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"

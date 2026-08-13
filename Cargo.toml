@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members  = ["crates/nixdoc", "crates/nixdoc-ffi"]
+members  = ["crates/nixdoc", "crates/nixdoc-source", "crates/nixdoc-ffi"]
 
 [workspace.package]
 version      = "0.2.0"
@@ -11,7 +11,8 @@ homepage     = "https://github.com/feel-co/nixdoc"
 rust-version = "1.90.0"
 
 [workspace.dependencies]
-nixdoc = { path = "./crates/nixdoc", version = "0.2.0" }
+nixdoc        = { path = "./crates/nixdoc", version = "0.2.0", default-features = false }
+nixdoc-source = { path = "./crates/nixdoc-source", version = "0.2.0" }
 
 thiserror  = { version = "2.0.20", default-features = false }
 serde      = { version = "1.0.229", features = ["derive"], default-features = false }
