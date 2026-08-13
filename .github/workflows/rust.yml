@@ -30,7 +30,10 @@ jobs:
               - '.github/workflows/rust.yml'
               - 'Cargo.toml'
               - 'Cargo.lock'
-              - 'src/**'
+              - 'crates/**'
+              - 'README.md'
+              - 'flake.nix'
+              - 'nix/**'
 
   build:
     name: Build
@@ -49,6 +52,11 @@ jobs:
 
       - name: Build
         run: cargo build --release
+
+      - name: Compile C header
+        run: |
+          printf '#include <nixdoc.h>\nint main(void) { return nixdoc_version() == 0; }\n' |
+            cc -std=c11 -Wall -Wextra -Werror -Icrates/nixdoc-ffi/include -x c -c -o /tmp/nixdoc-header.o -
 
   docs:
     name: Documentation
@@ -84,7 +92,12 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run tests
-        run: cargo test
+        run: |
+          cargo test --workspace --all-features
+          cargo test -p nixdoc --no-default-features
+          cargo check -p nixdoc --no-default-features --features serde
+          cargo test -p nixdoc-source --no-default-features
+          cargo check -p nixdoc-source --no-default-features --features serde
 
   clippy:
     name: Clippy
@@ -102,4 +115,10 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run Clippy
-        run: cargo clippy -- -D warnings
+        run: |
+          cargo clippy --workspace --all-targets --all-features -- -D warnings
+          cargo clippy -p nixdoc --no-default-features -- -D warnings
+          cargo clippy -p nixdoc-source --no-default-features -- -D warnings
+
+      - name: Check formatting
+        run: cargo fmt --check
