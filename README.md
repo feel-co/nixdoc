@@ -7,21 +7,25 @@
 Small, robust and powerful parser for Nixdoc comments implementing the [RFC 145]
 format for documenting Nix library functions. While the Nixdoc format is not
 enforced by any tooling, it is somewhat widely adopted and is treated as a
-formal specification. Nixdoc uses `/** … */` doc comments containing Markdown
-with structured sections introduced by level-1 headings (`# Section`). This
-crate, in turn, parses that format into a typed `DocComment` structure,
-extracting the description, type signature, arguments, examples, and any other
-sections.
+formal specification in Nixpkgs and Nixpkgs-adjacent spaces. Nixdoc uses
+`/** ...*/` doc comments containing Markdown with structured sections introduced
+by level-1 headings (`# Section`). This crate, in turn, parses that format into
+a typed `DocComment` structure, extracting the description, type signature,
+arguments, examples, and any other sections.
 
 ## Installation
 
-Nixdoc is officially published on <https://crates.io>. You may install it by
-adding it to your Cargo manifest with the latest version:
+Nixdoc is officially [published on crates.io](https://crates.io/crates/nixdoc).
+You may install it by adding it to your Cargo manifest with the latest version:
 
 ```toml
 [dependencies]
 nixdoc = "0.2"
 ```
+
+This repository does not provide a CLI tool. Instead, it aims to be a powerful
+and easy-to-use library you can _easily_ extend to build your own tooling around
+it. See the usage section to get started.
 
 ## Usage
 
@@ -101,10 +105,10 @@ nixdoc = { version = "0.2", default-features = false }
 When using `no_std`, you must enable the `alloc` crate and link `libcore` or
 `liballoc`.
 
-### C FFI Bindings
+## C FFI Bindings
 
-This crate provides a companion crate under `nixdoc-ffi` for C, C++ or Nim
-integration:
+We provide a companion crate under `nixdoc-ffi` for Nim, C or C++ projects to be
+able to integrate with the nixdoc library:
 
 ```toml
 [dependencies]
@@ -132,7 +136,7 @@ int main() {
 ```
 
 While memory safety is not guaranteed, there has been additional care on helping
-promote memory safety. The FFI interface has been annotated with safety comments
+promote memory safety. The FFI bindings have been annotated with safety comments
 to provide guidance on what to look for.
 
 You may consume the FFI crate as either a dynamic crate or a static crate.
@@ -142,6 +146,11 @@ Simply build the FFI crate, and consume whichever library you need.
 # Produces libnixdoc.so (shared) and libnixdoc.a (static)
 $ cargo build -p nixdoc-ffi
 ```
+
+> [!TIP]
+> This is designed for consumers such as the
+> [SPAM](https://github.com/feel-co/spam) project. Please feel free to provide
+> feedback on the FFI bindings per your experience.
 
 ## Comment format
 
@@ -183,11 +192,6 @@ This project is made available under Mozilla Public License (MPL) version 2.0.
 See [LICENSE](LICENSE) for more details on the exact conditions. An online copy
 is provided [here](https://www.mozilla.org/en-US/MPL/2.0/).
 
-<div align="right">
-  <a href="#doc-begin">Back to the Top</a>
-  <br/>
-</div>
-
 ### Attributions
 
 [noogle]: https://github.com/nix-community/noogle
@@ -196,3 +200,8 @@ This project is greatly inspired by [noogle]'s Pesto module. While pesto is a
 CLI and prefers to consume the `rnix` parser, `nixdoc` is completely standalone
 and is designed as a library with the integration and extraction left to the
 user.
+
+<div align="right">
+  <a href="#doc-begin">Back to the Top</a>
+  <br/>
+</div>
