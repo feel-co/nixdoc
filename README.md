@@ -55,6 +55,32 @@ assert_eq!(args[0].name, "a");
 assert_eq!(args[1].name, "b");
 ```
 
+### Source Extraction
+
+The companion `nixdoc-source` crate associates RFC 145 comments with their
+documented Nix expressions, bindings, and lambda formals without an external Nix
+parser:
+
+```toml
+[dependencies]
+nixdoc-source = "0.2"
+```
+
+```rust
+use nixdoc_source::DocumentedNodeKind;
+
+let source = "/** Identity function. */ id = x: x;";
+let document = nixdoc_source::extract(source);
+
+assert!(document.diagnostics.is_empty());
+assert_eq!(document.items.len(), 1);
+assert_eq!(document.items[0].kind, DocumentedNodeKind::Binding);
+assert_eq!(document.items[0].name.as_deref(), Some("id"));
+```
+
+Source items and diagnostics include byte spans into the original input. With
+the `serde` feature, `SourceDocument` uses a versioned serialization schema.
+
 ### Type Signatures
 
 ````rust
@@ -108,7 +134,8 @@ When using `no_std`, you must enable the `alloc` crate and link `libcore` or
 ## C FFI Bindings
 
 We provide a companion crate under `nixdoc-ffi` for Nim, C or C++ projects to be
-able to integrate with the nixdoc library:
+able to integrate with the nixdoc library. The C declarations are provided in
+[`crates/nixdoc-ffi/include/nixdoc.h`](crates/nixdoc-ffi/include/nixdoc.h):
 
 ```toml
 [dependencies]
@@ -171,7 +198,7 @@ Recognised section headings (case-insensitive):
 ## Development
 
 Development tooling is provided by the default dev shell. You may use either
-`nix develop` or use [Direnv](https://direnv.net).
+`nix develop` or use [Direnv](https://direnv.net) and invoke `direnv allow`.
 
 ```bash
 # Run with Nix flake
