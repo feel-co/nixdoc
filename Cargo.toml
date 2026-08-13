@@ -3,7 +3,7 @@ resolver = "3"
 members  = ["crates/nixdoc", "crates/nixdoc-source", "crates/nixdoc-ffi"]
 
 [workspace.package]
-version      = "0.2.0"
+version      = "0.3.0"
 edition      = "2024"
 license      = "MPL-2.0"
 repository   = "https://github.com/feel-co/nixdoc"
@@ -11,11 +11,12 @@ homepage     = "https://github.com/feel-co/nixdoc"
 rust-version = "1.90.0"
 
 [workspace.dependencies]
-nixdoc        = { path = "./crates/nixdoc", version = "0.2.0", default-features = false }
-nixdoc-source = { path = "./crates/nixdoc-source", version = "0.2.0" }
+nixdoc        = { path = "./crates/nixdoc", version = "0.3.0", default-features = false }
+nixdoc-source = { path = "./crates/nixdoc-source", version = "0.3.0" }
 
 thiserror  = { version = "2.0.20", default-features = false }
 serde      = { version = "1.0.229", features = ["derive"], default-features = false }
 serde_json = "1.0.151"
+markdown   = "1.0.0"
 
 expect-test = "1.5.1"

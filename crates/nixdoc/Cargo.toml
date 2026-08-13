@@ -16,7 +16,7 @@ crate-type = ["rlib"]
 [dependencies]
 thiserror = { workspace = true }
 serde = { workspace = true, features = ["alloc"], optional = true }
-markdown = "1.0.0"
+markdown = { workspace = true }
 
 [dev-dependencies]
 expect-test = { workspace = true }
