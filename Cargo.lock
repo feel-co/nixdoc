@@ -55,6 +55,8 @@ name = "nixdoc-ffi"
 version = "0.2.0"
 dependencies = [
  "nixdoc",
+ "nixdoc-source",
+ "serde_json",
 ]
 
 [[package]]

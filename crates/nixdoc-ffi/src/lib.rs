@@ -2,7 +2,6 @@
 
 use std::{
   ffi::CString,
-  mem::ManuallyDrop,
   os::raw::{c_char, c_int},
   panic::catch_unwind,
   ptr,
@@ -11,10 +10,23 @@ use std::{
 
 use nixdoc::DocComment;
 
-const NIXDOC_SUCCESS: c_int = 0;
-const NIXDOC_ERROR_PARSE: c_int = 1;
-const NIXDOC_ERROR_NULL: c_int = 2;
-const NIXDOC_ERROR_PANIC: c_int = 3;
+/// Operation completed successfully.
+pub const NIXDOC_SUCCESS: c_int = 0;
+/// Input could not be parsed.
+pub const NIXDOC_ERROR_PARSE: c_int = 1;
+/// A required pointer was null.
+pub const NIXDOC_ERROR_NULL: c_int = 2;
+/// Rust caught a panic at the ABI boundary.
+pub const NIXDOC_ERROR_PANIC: c_int = 3;
+
+static NIXDOC_VERSION: &[u8] =
+  concat!(env!("CARGO_PKG_VERSION"), "\0").as_bytes();
+
+/// Returns the library version as a static null-terminated UTF-8 string.
+#[unsafe(no_mangle)]
+pub extern "C" fn nixdoc_version() -> *const c_char {
+  NIXDOC_VERSION.as_ptr().cast()
+}
 
 #[repr(C)]
 pub struct NixdocDocComment {
@@ -66,6 +78,8 @@ pub unsafe extern "C" fn nixdoc_parse_into(
   if input.is_null() || out_doc.is_null() {
     return NIXDOC_ERROR_NULL;
   }
+  // Ensure callers never observe a stale handle after failure.
+  *out_doc = ptr::null_mut();
 
   let result = catch_unwind(|| {
     let input_str = std::ffi::CStr::from_ptr(input)
@@ -119,10 +133,46 @@ pub unsafe extern "C" fn nixdoc_is_doc_comment(input: *const c_char) -> bool {
   result.unwrap_or(false)
 }
 
+/// Extracts source-associated documentation as versioned JSON.
+///
+/// The returned string must be released with [`nixdoc_free_string`].
+///
+/// # Safety
+///
+/// `input` must be a valid, null-terminated C string.
+#[unsafe(no_mangle)]
+pub unsafe extern "C" fn nixdoc_extract_json(
+  input: *const c_char,
+) -> *mut c_char {
+  if input.is_null() {
+    return ptr::null_mut();
+  }
+  catch_unwind(|| {
+    let input = std::ffi::CStr::from_ptr(input).to_string_lossy();
+    let document = nixdoc_source::extract(&input);
+    serde_json::to_string(&document)
+      .map(|json| rust_string_to_cstring(&json))
+      .unwrap_or(ptr::null_mut())
+  })
+  .unwrap_or(ptr::null_mut())
+}
+
 fn rust_string_to_cstring(s: &str) -> *mut c_char {
   CString::new(s)
-    .unwrap_or_else(|_| CString::new("").unwrap())
+    .unwrap_or_else(|_| CString::default())
     .into_raw()
+}
+
+fn strings_to_array(items: Vec<*mut c_char>) -> *mut NixdocStringArray {
+  let len = items.len();
+  if len == 0 {
+    return Box::into_raw(Box::new(NixdocStringArray {
+      data: ptr::null_mut(),
+      len:  0,
+    }));
+  }
+  let data = Box::into_raw(items.into_boxed_slice()).cast::<*mut c_char>();
+  Box::into_raw(Box::new(NixdocStringArray { data, len }))
 }
 
 /// Gets the title from a parsed doc comment.
@@ -257,26 +307,15 @@ pub unsafe extern "C" fn nixdoc_arguments(
     let doc = &*(doc as *const DocComment);
     let args = doc.arguments();
 
-    let len = args.len();
-    if len == 0 {
-      return Box::into_raw(Box::new(NixdocStringArray {
-        data: ptr::null_mut(),
-        len:  0,
-      }));
-    }
-
-    let items: Vec<*mut c_char> = args
-      .iter()
-      .map(|arg| {
-        let combined = format!("{}: {}", arg.name, arg.description);
-        rust_string_to_cstring(&combined)
-      })
-      .collect();
-
-    let data = items.as_ptr() as *mut *mut c_char;
-    let _ = ManuallyDrop::new(items);
-
-    Box::into_raw(Box::new(NixdocStringArray { data, len }))
+    strings_to_array(
+      args
+        .iter()
+        .map(|arg| {
+          let combined = format!("{}: {}", arg.name, arg.description);
+          rust_string_to_cstring(&combined)
+        })
+        .collect(),
+    )
   });
 
   result.unwrap_or(ptr::null_mut())
@@ -300,27 +339,16 @@ pub unsafe extern "C" fn nixdoc_examples(
     let doc = &*(doc as *const DocComment);
     let examples = doc.examples();
 
-    let len = examples.len();
-    if len == 0 {
-      return Box::into_raw(Box::new(NixdocStringArray {
-        data: ptr::null_mut(),
-        len:  0,
-      }));
-    }
-
-    let items: Vec<*mut c_char> = examples
-      .iter()
-      .map(|ex| {
-        let lang = ex.language.as_deref().unwrap_or("");
-        let combined = format!("{}: {}", lang, ex.code);
-        rust_string_to_cstring(&combined)
-      })
-      .collect();
-
-    let data = items.as_ptr() as *mut *mut c_char;
-    let _ = ManuallyDrop::new(items);
-
-    Box::into_raw(Box::new(NixdocStringArray { data, len }))
+    strings_to_array(
+      examples
+        .iter()
+        .map(|ex| {
+          let lang = ex.language.as_deref().unwrap_or("");
+          let combined = format!("{}: {}", lang, ex.code);
+          rust_string_to_cstring(&combined)
+        })
+        .collect(),
+    )
   });
 
   result.unwrap_or(ptr::null_mut())
@@ -344,23 +372,12 @@ pub unsafe extern "C" fn nixdoc_notes(
     let doc = &*(doc as *const DocComment);
     let notes = doc.notes();
 
-    let len = notes.len();
-    if len == 0 {
-      return Box::into_raw(Box::new(NixdocStringArray {
-        data: ptr::null_mut(),
-        len:  0,
-      }));
-    }
-
-    let items: Vec<*mut c_char> = notes
-      .iter()
-      .map(|note| rust_string_to_cstring(note))
-      .collect();
-
-    let data = items.as_ptr() as *mut *mut c_char;
-    let _ = ManuallyDrop::new(items);
-
-    Box::into_raw(Box::new(NixdocStringArray { data, len }))
+    strings_to_array(
+      notes
+        .iter()
+        .map(|note| rust_string_to_cstring(note))
+        .collect(),
+    )
   });
 
   result.unwrap_or(ptr::null_mut())
@@ -384,21 +401,12 @@ pub unsafe extern "C" fn nixdoc_warnings(
     let doc = &*(doc as *const DocComment);
     let warnings = doc.warnings_content();
 
-    let len = warnings.len();
-    if len == 0 {
-      return Box::into_raw(Box::new(NixdocStringArray {
-        data: ptr::null_mut(),
-        len:  0,
-      }));
-    }
-
-    let items: Vec<*mut c_char> =
-      warnings.iter().map(|w| rust_string_to_cstring(w)).collect();
-
-    let data = items.as_ptr() as *mut *mut c_char;
-    let _ = ManuallyDrop::new(items);
-
-    Box::into_raw(Box::new(NixdocStringArray { data, len }))
+    strings_to_array(
+      warnings
+        .iter()
+        .map(|warning| rust_string_to_cstring(warning))
+        .collect(),
+    )
   });
 
   result.unwrap_or(ptr::null_mut())
@@ -438,7 +446,13 @@ pub unsafe extern "C" fn nixdoc_free_string_array(arr: *mut NixdocStringArray) {
         drop(CString::from_raw(*ptr));
       }
     }
-    drop(Vec::from_raw_parts(slice.as_mut_ptr(), arr.len, arr.len));
+    let raw = ptr::slice_from_raw_parts_mut(slice.as_mut_ptr(), arr.len);
+    drop(Box::from_raw(raw));
   }
   drop(Box::from_raw(arr));
+}
+
+#[cfg(test)]
+mod tests {
+  include!("lib_tests.rs");
 }

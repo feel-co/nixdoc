@@ -15,4 +15,6 @@ name = "nixdoc"
 crate-type = ["cdylib", "staticlib"]
 
 [dependencies]
-nixdoc = { workspace = true, features = ["std"] }
+nixdoc = { workspace = true, features = ["serde", "std"] }
+nixdoc-source = { workspace = true, features = ["serde", "std"] }
+serde_json = { workspace = true }
