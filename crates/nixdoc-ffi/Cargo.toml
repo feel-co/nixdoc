@@ -13,6 +13,7 @@ rust-version.workspace = true
 [lib]
 name = "nixdoc"
 crate-type = ["cdylib", "staticlib"]
+doc = false
 
 [dependencies]
 nixdoc = { workspace = true, features = ["serde", "std"] }

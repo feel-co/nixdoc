@@ -120,5 +120,8 @@ jobs:
           cargo clippy -p nixdoc --no-default-features -- -D warnings
           cargo clippy -p nixdoc-source --no-default-features -- -D warnings
 
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+
       - name: Check formatting
-        run: cargo fmt --check
+        run: nix develop --command cargo fmt --check
